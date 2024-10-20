@@ -5,6 +5,8 @@ import torchvision.models as models
 import torch.nn as nn
 from torch.optim import Adam
 
+import numpy as np
+
 # Possibly add transforms to improve data?
 
 # Checks for cuda device.
@@ -15,6 +17,9 @@ print('Loading dataset...')
 train_dataset = datasets.ImageFolder(root='DS_IDRID/Train', transform=transforms.ToTensor())
 test_dataset = datasets.ImageFolder(root='DS_IDRID/Test', transform=transforms.ToTensor())
 print('Dataset loaded.')
+
+print('Train Dataset Classes:', train_dataset.class_to_idx)
+print('Test Dataset Classes:', test_dataset.class_to_idx)
 
 # Creates the dataloaders
 print('Creating dataloaders...')
@@ -34,11 +39,10 @@ model = model.to(device) # Sets torch to the device available (preferred GPU)
 
 # Setup optimizers.
 crit = nn.CrossEntropyLoss()
-optim = Adam(model.parameters(), lr=0.001) # TODO Setup loop to test different rates for assgn
+optim = Adam(model.parameters(), lr=0.0001) # TODO Setup loop to test different rates for assgn
 
 
 # Training
-print('Training model...')
 def train_model(model, train_loader, crit, optim, epochs=20):
     model.train()
     for epoch in range(epochs):
@@ -53,10 +57,39 @@ def train_model(model, train_loader, crit, optim, epochs=20):
             loss = crit(outputs, labels)
             loss.backward()
             optim.step()
+            running_loss += loss.item()
 
-        print(f'Running loss {running_loss}')
-        print(f'Epoch: {epoch}/{epochs}, Loss: {running_loss/len(train_loader):.4f}')
+        print(f'Epoch: {epoch+1}/{epochs}, Loss: {running_loss/len(train_loader):.4f}')
 
 
+# Evaluation
+def eval_model(model, test_loader):
+    model.eval()
+    all_labels = []
+    all_preds = []
+    with torch.no_grad():
+        for images, labels in test_loader:
+            # Sends data to the device
+            images = images.to(device)
+            labels = labels.to(device)
+
+            outputs = model(images)
+            _, preds = torch.max(outputs, 1)
+
+            # Fixes weird errors with gpu tensors ;-;
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
+        return all_labels, all_preds
+
+
+print('Training model...')
 train_model(model, train_loader, crit, optim)
+print('Model trained.')
+
+print('Evaluating model...')
+all_labels, all_preds = eval_model(model, test_loader)
+print('Model evaluated.')
+
+# Evaluation metrics
+
 
