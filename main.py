@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.optim import Adam
 
 import numpy as np
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+import matplotlib.pyplot as plt
 
 # Possibly add transforms to improve data?
 
@@ -43,7 +45,7 @@ optim = Adam(model.parameters(), lr=0.0001) # TODO Setup loop to test different 
 
 
 # Training
-def train_model(model, train_loader, crit, optim, epochs=20):
+def train_model(model, train_loader, crit, optim, epochs=100):
     model.train()
     for epoch in range(epochs):
         running_loss = 0.0
@@ -82,14 +84,39 @@ def eval_model(model, test_loader):
         return all_labels, all_preds
 
 
+# ROC Curves
+def plot_roc_curve(labels, preds):
+    # False positives, true postivies, and the area under the curve.
+    fpr, tpr, _ = roc_curve(labels, preds, pos_label=1)
+    roc_auc = auc(fpr, tpr)
+
+    # Plots the ROC curve.
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], color='red', linestyle='--', label='Random Classifier (area = 0.5)')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend(loc="lower right")
+    plt.show()
+
+
 print('Training model...')
 train_model(model, train_loader, crit, optim)
 print('Model trained.')
 
-print('Evaluating model...')
-all_labels, all_preds = eval_model(model, test_loader)
-print('Model evaluated.')
+labels, preds = eval_model(model, test_loader)
 
 # Evaluation metrics
+accuracy = np.mean(np.array(labels) == np.array(preds))
+print(f'Classification Accuracy: {accuracy:.4f}')
+
+cm = confusion_matrix(labels, preds)
+print(f'Confusion Matrix:\n')
+print(cm)
+
+plot_roc_curve(labels, preds)
 
 
