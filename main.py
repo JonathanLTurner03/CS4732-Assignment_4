@@ -29,3 +29,23 @@ model.fc = nn.Linear(num_features, 2)
 crit = nn.CrossEntropyLoss()
 optim = Adam(model.parameters(), lr=0.001) # TODO Setup loop to test different rates for assgn
 
+
+# Training
+def train_model(model, train_loader, crit, optim, epochs=20):
+    for epoch in range(epochs):
+        model.train()
+        for epoch in range(epochs):
+            for images, labels in train_loader:
+                # TODO Load images to torch device
+
+                optim.zero_grad()
+                outputs = model(images)
+
+                loss = crit(outputs, labels)
+                loss.backward()
+                optim.step()
+                print(f'Loss: {loss.item()}')
+
+
+train_model(model, train_loader, crit, optim)
+
