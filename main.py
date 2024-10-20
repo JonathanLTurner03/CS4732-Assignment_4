@@ -29,20 +29,6 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
 print('Dataloaders created.')
 
-## Loads the resnet50 model.
-print('Loading model...')
-model = models.resnet50(pretrained=True)
-num_features = model.fc.in_features
-print('Model loaded.')
-
-# Converts to a binary classifier.
-model.fc = nn.Linear(num_features, 2)
-model = model.to(device) # Sets torch to the device available (preferred GPU)
-
-# Setup optimizers.
-crit = nn.CrossEntropyLoss()
-optim = Adam(model.parameters(), lr=0.0001) # TODO Setup loop to test different rates for assgn
-
 
 # Training
 def train_model(model, train_loader, crit, optim, epochs=100):
@@ -85,7 +71,7 @@ def eval_model(model, test_loader):
 
 
 # ROC Curves
-def plot_roc_curve(labels, preds):
+def plot_roc_curve(labels, preds, save_path, title='Receiver Operating Characteristic (ROC) Curve'):
     # False positives, true postivies, and the area under the curve.
     fpr, tpr, _ = roc_curve(labels, preds, pos_label=1)
     roc_auc = auc(fpr, tpr)
@@ -98,25 +84,45 @@ def plot_roc_curve(labels, preds):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.title(title)
     plt.legend(loc="lower right")
+
+    # Saved for use in paper.
+    plt.savefig(save_path)
     plt.show()
 
+# Learning rates and epoch sets
+lr_set = [0.001, 0.0005, 0.0001]
+epochs_set = [10, 25, 50]
 
-print('Training model...')
-train_model(model, train_loader, crit, optim)
-print('Model trained.')
+for lr in lr_set:
+    for epochs in epochs_set:
+        print(f'Learning Rate: {lr}, Epochs: {epochs}')
+        model = models.resnet50(pretrained=True)
+        num_features = model.fc.in_features
 
-labels, preds = eval_model(model, test_loader)
+        # Converts to a binary classifier.
+        model.fc = nn.Linear(num_features, 2)
+        model = model.to(device)  # Sets torch to the device available (preferred GPU)
 
-# Evaluation metrics
-accuracy = np.mean(np.array(labels) == np.array(preds))
-print(f'Classification Accuracy: {accuracy:.4f}')
+        # Setup optimizers.
+        crit = nn.CrossEntropyLoss()
+        optim = Adam(model.parameters(), lr=lr)
 
-cm = confusion_matrix(labels, preds)
-print(f'Confusion Matrix:\n')
-print(cm)
+        print('Training model...')
+        train_model(model, train_loader, crit, optim, epochs=epochs)
+        print('Model trained.')
 
-plot_roc_curve(labels, preds)
+        labels, preds = eval_model(model, test_loader)
+
+        # Evaluation metrics
+        accuracy = np.mean(np.array(labels) == np.array(preds))
+        print(f'Classification Accuracy: {accuracy:.4f}')
+
+        cm = confusion_matrix(labels, preds)
+        print(f'Confusion Matrix:\n')
+        print(cm)
+
+        plot_roc_curve(labels, preds, f'output/roc_curve_lr_{lr}_epochs_{epochs}.png', title=f'ROC Curve (LR: {lr}, Epochs: {epochs})')
 
 
