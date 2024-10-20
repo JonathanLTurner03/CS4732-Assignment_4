@@ -7,7 +7,8 @@ from torch.optim import Adam
 
 # Possibly add transforms to improve data?
 
-# Add a way to check for torch GPU and use it if available.
+# Checks for cuda device.
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Loads the dataset
 print('Loading dataset...')
@@ -29,7 +30,7 @@ print('Model loaded.')
 
 # Converts to a binary classifier.
 model.fc = nn.Linear(num_features, 2)
-#model = model.to(device) # Gotta get torchGPU working for this first.
+model = model.to(device) # Sets torch to the device available (preferred GPU)
 
 # Setup optimizers.
 crit = nn.CrossEntropyLoss()
@@ -39,20 +40,22 @@ optim = Adam(model.parameters(), lr=0.001) # TODO Setup loop to test different r
 # Training
 print('Training model...')
 def train_model(model, train_loader, crit, optim, epochs=20):
+    model.train()
     for epoch in range(epochs):
-        model.train()
         running_loss = 0.0
-        for epoch in range(epochs):
-            for images, labels in train_loader:
-                # TODO Load images to torch device
+        for images, labels in train_loader:
+            # Sends the data to the device.
+            images = images.to(device)
+            labels = labels.to(device)
 
-                optim.zero_grad()
-                outputs = model(images)
+            optim.zero_grad()
+            outputs = model(images)
+            loss = crit(outputs, labels)
+            loss.backward()
+            optim.step()
 
-                loss = crit(outputs, labels)
-                loss.backward()
-                optim.step()
-            print(f'Epoch: {epoch}/{epochs}, Loss: {running_loss/len(train_loader):.4f}')
+        print(f'Running loss {running_loss}')
+        print(f'Epoch: {epoch}/{epochs}, Loss: {running_loss/len(train_loader):.4f}')
 
 
 train_model(model, train_loader, crit, optim)
