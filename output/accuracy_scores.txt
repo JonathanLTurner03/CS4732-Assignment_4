@@ -1,0 +1,9 @@
+LR: 0.001, Epochs: 10, Accuracy: 0.8485
+LR: 0.001, Epochs: 25, Accuracy: 0.6667
+LR: 0.001, Epochs: 50, Accuracy: 0.5455
+LR: 0.0005, Epochs: 10, Accuracy: 0.6061
+LR: 0.0005, Epochs: 25, Accuracy: 0.8788
+LR: 0.0005, Epochs: 50, Accuracy: 0.7727
+LR: 0.0001, Epochs: 10, Accuracy: 0.7727
+LR: 0.0001, Epochs: 25, Accuracy: 0.7273
+LR: 0.0001, Epochs: 50, Accuracy: 0.8333

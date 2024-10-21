@@ -1,3 +1,8 @@
+# Name: Jonathan Turner
+# Number: 001075086
+# Assignment 4
+# Preprocessing Dataset
+
 import os
 import shutil
 

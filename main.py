@@ -1,3 +1,8 @@
+# Name: Jonathan Turner
+# Number: 001075086
+# Assignment 4
+# Model Evaluation
+
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -8,6 +13,7 @@ from torch.optim import Adam
 import numpy as np
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Possibly add transforms to improve data?
 
@@ -91,14 +97,27 @@ def plot_roc_curve(labels, preds, save_path, title='Receiver Operating Character
     plt.savefig(save_path)
     plt.show()
 
+
+def plot_confusion_matrix(matrix, classes, save_path, title='Confusion Matrix'):
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", cbar=False,
+                xticklabels=classes, yticklabels=classes)
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(title)
+    plt.savefig(save_path)
+    plt.show()
+
+
 # Learning rates and epoch sets
 lr_set = [0.001, 0.0005, 0.0001]
 epochs_set = [10, 25, 50]
+accuracy_scores = []
 
 for lr in lr_set:
     for epochs in epochs_set:
         print(f'Learning Rate: {lr}, Epochs: {epochs}')
-        model = models.resnet50(pretrained=True)
+        model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
         num_features = model.fc.in_features
 
         # Converts to a binary classifier.
@@ -117,12 +136,15 @@ for lr in lr_set:
 
         # Evaluation metrics
         accuracy = np.mean(np.array(labels) == np.array(preds))
-        print(f'Classification Accuracy: {accuracy:.4f}')
+        accuracy_scores.append(f'LR: {lr}, Epochs: {epochs}, Accuracy: {accuracy:.4f}\n')
 
         cm = confusion_matrix(labels, preds)
-        print(f'Confusion Matrix:\n')
-        print(cm)
+        classes = ['DR', 'noDR']
 
         plot_roc_curve(labels, preds, f'output/roc_curve_lr_{lr}_epochs_{epochs}.png', title=f'ROC Curve (LR: {lr}, Epochs: {epochs})')
+        plot_confusion_matrix(cm, classes, f'output/confusion_matrix_lr_{lr}_epochs_{epochs}.png', title=f'Confusion Matrix (LR: {lr}, Epochs: {epochs})')
 
-
+# Saves the accuracy scores to a file.
+with open('output/accuracy_scores.txt', 'w') as f:
+    f.writelines(accuracy_scores)
+    print('Accuracy scores saved to output/accuracy_scores.txt')
